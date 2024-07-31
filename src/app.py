@@ -2,11 +2,14 @@ from flask import Flask, request, Response, stream_with_context, jsonify
 from flask_cors import cross_origin
 import logging
 from dotenv import load_dotenv
+
 load_dotenv(".env")
 from flask import request
 from routes.health import health
 from routes.gemini import gemini_call
 from routes.users import user_call
+from routes.questionnaire import get_questionnaire
+
 # Note :- THIS FILE SHOULD ONLY CONTAIN ROUTING AND LOGGING
 
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +48,18 @@ def users():
         data = request.get_json()
         user_status = user_call(data)
         return {"users_call_resp": user_status}, 200
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/questionnaire", methods=["GET"])
+@cross_origin()
+def getQuestionnaire():
+    try:
+        logging.info("/api/questionnaire api called")
+        questionnaireStatus = get_questionnaire()
+        return {"questionnaireResponse", questionnaireStatus}
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
