@@ -6,7 +6,8 @@ you need to formulate a pre consultation questionnaire to determine the mental s
 ["Activity Preference", "Goal Preferences", "commitment level"] include any other sections you like 
 And you must return a JSON of questionnaire
 
-The below is the example json you need to provide as response
+The below is the example json you need to provide as response, Give atleast 10 questions in single sections,
+
 {
     "questionnaire": {
         "Mental Wellness Assessment": [

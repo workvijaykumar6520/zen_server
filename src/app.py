@@ -58,8 +58,11 @@ def users():
 def getQuestionnaire():
     try:
         logging.info("/api/questionnaire api called")
-        questionnaireStatus = get_questionnaire()
-        return {"success": True, "data": questionnaireStatus, "message": "Successfully generated questionnaire"}
+        # questionnaireStatus = get_questionnaire()
+        return Response(
+            stream_with_context(get_questionnaire()), content_type="application/json"
+        )
+        # return {"success": True, "data": questionnaireStatus, "message": "Successfully generated questionnaire"}
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500

@@ -48,6 +48,7 @@ multidict==6.0.5
 numpy==1.26.4
 orjson==3.10.6
 packaging==24.1
+partialjson==0.0.7
 proto-plus==1.24.0
 protobuf==4.25.4
 pyasn1==0.6.0
