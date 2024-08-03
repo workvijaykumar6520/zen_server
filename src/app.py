@@ -9,11 +9,14 @@ from routes.health import health
 from routes.gemini import gemini_call
 from routes.users import user_call
 from routes.questionnaire import get_questionnaire
+from routes.questionnaire import post_questionnaire
+from routes.goals import getGoalRecommendation, getGoalTargets
 
 # Note :- THIS FILE SHOULD ONLY CONTAIN ROUTING AND LOGGING
 
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
+
 
 @app.route("/api/health")
 @cross_origin()
@@ -25,6 +28,7 @@ def health_route():
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
+
 
 @app.route("/api/gemini", methods=["POST"])
 @cross_origin()
@@ -39,6 +43,7 @@ def _gemini_call_():
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
+
 
 @app.route("/api/user", methods=["POST"])
 @cross_origin()
@@ -63,6 +68,48 @@ def getQuestionnaire():
             stream_with_context(get_questionnaire()), content_type="application/json"
         )
         # return {"success": True, "data": questionnaireStatus, "message": "Successfully generated questionnaire"}
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/questionnaire", methods=["POST"])
+@cross_origin()
+def saveQuestionnaire():
+    try:
+        logging.info("/api/questionnaire POST api called")
+        data = request.get_json()
+        response = post_questionnaire(data)
+        return {"questionnaire_response": response}, 200
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/goal-recommendation", methods=["GET"])
+@cross_origin()
+def goalRecommendation():
+    try:
+        logging.info("/api/goal-recommendation GET called")
+        return Response(
+            stream_with_context(getGoalRecommendation()),
+            content_type="application/json",
+        )
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/goal-targets", methods=["GET"])
+@cross_origin()
+def weekGoals():
+    try:
+        logging.info("/api/goal-targets GET called")
+        data = request.get_json()
+        return Response(
+            stream_with_context(getGoalTargets(data)),
+            content_type="application/json",
+        )
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
