@@ -18,6 +18,7 @@ def getGoalRecommendation():
     promptString = GET_GOAL_RECOMMENDATION + questionnaireResponseString
     resp = ""
     prevResp = {}
+    # save the data to db
     for chunk in gemini_llm.stream(promptString):
         resp += str(chunk.content)
         result = extract_json(resp)
@@ -29,11 +30,14 @@ def getGoalRecommendation():
     return
 
 
+# todo new function for getGaolRecommendation 
+
 def getGoalTargets(data):
     resp = ""
     prevResp = {}
-    goalTargetJson = json.dumps(data["selectedGoal"]["shortDescription"])
-
+    goalTargetJson = json.dumps(data["selectedGoal"]["shortDescription"]) or ""
+    # todo FE will provide userId, and goal, fetch that json using id and get the response from gemini and steam the response 
+    # and store the response to db here
     promptString = goalTargetJson + GET_GOAL_TARGETS
     print(promptString)
     for chunk in gemini_llm.stream(promptString):

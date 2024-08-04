@@ -32,6 +32,7 @@ def post_questionnaire(data):
     }
     try:
         doc_ref = db.collection("questionnaire").add(db_data)
+        # todo call getGoalRecommendation function and save the data to db
         return {"data": {}, "message": "Questionnaire stored successfully"}
     except:
         return {
