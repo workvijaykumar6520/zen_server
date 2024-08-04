@@ -13,6 +13,7 @@ from routes.questionnaire import get_questionnaire
 from routes.questionnaire import post_questionnaire
 from routes.goals import getGoalRecommendation, getGoalTargets
 from routes.login import login_with_google
+from auth_config import decodeAuth
 
 # Note :- THIS FILE SHOULD ONLY CONTAIN ROUTING AND LOGGING
 
@@ -47,11 +48,12 @@ def health_route():
 #         logging.error(e, exc_info=True)
 #         return {"success": False, "message": "Internal server error"}, 500
 
-@app.route('/api/login', methods=['POST'])
+
+@app.route("/api/login", methods=["POST"])
 def login():
     try:
         # Get the ID token from the request
-        id_token = request.json['idToken']
+        id_token = request.json["idToken"]
 
         # Verify the ID token and retrieve user info
         user_info = login_with_google(id_token)
@@ -64,6 +66,7 @@ def login():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/api/gemini", methods=["POST"])
 @cross_origin()
 def _gemini_call_():
@@ -71,7 +74,7 @@ def _gemini_call_():
         logging.info("/api/gemini api called")
         data = request.get_json()
         print(request.headers, "headers")
-        
+
         # Retrieve the token from the Authorization header
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
@@ -79,14 +82,17 @@ def _gemini_call_():
             try:
                 # Verify the token using Firebase Authentication
                 decoded_token = auth_service.verify_id_token(token)
-                user_id = decoded_token['uid']
+                user_id = decoded_token["uid"]
                 logging.info(f"Token verified for user: {user_id}")
             except Exception as e:
                 logging.error(f"Token verification failed: {e}")
                 return {"success": False, "message": "Invalid or expired token"}, 401
         else:
-            return {"success": False, "message": "Authorization token missing or invalid"}, 401
-        
+            return {
+                "success": False,
+                "message": "Authorization token missing or invalid",
+            }, 401
+
         user_message = data.get("message")
         gemini_call_resp = gemini_call(user_message)
         return {"gemini_call_resp": gemini_call_resp}, 200
@@ -113,7 +119,6 @@ def users():
 def getQuestionnaire():
     try:
         logging.info("/api/questionnaire api called")
-        # questionnaireStatus = get_questionnaire()
         return Response(
             stream_with_context(get_questionnaire()), content_type="application/json"
         )
@@ -129,7 +134,21 @@ def saveQuestionnaire():
     try:
         logging.info("/api/questionnaire POST api called")
         data = request.get_json()
-        response = post_questionnaire(data)
+        # authResponse = decodeAuth(request.headers)
+        # if isinstance(authResponse, tuple):
+        #     auth_data, status_code = authResponse
+        #     if not auth_data["success"]:
+        #         return auth_data, status_code
+        # else:
+        #     auth_data = authResponse
+        #     if not auth_data["success"]:
+        #         return auth_data, 401
+
+        # user_data = auth_data.get("data")
+        # if not user_data:
+        #     return {"success": False, "message": "User data not found"}, 400
+
+        response = post_questionnaire(data, "123")
         return {"questionnaire_response": response}, 200
     except Exception as e:
         logging.error(e, exc_info=True)

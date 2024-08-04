@@ -4,6 +4,7 @@ from partialjson.json_parser import JSONParser
 from datetime import datetime, timezone
 from templates.questionnaire import GET_QUESTIONNAIRE
 from routes.utils import extract_json, gemini_llm
+from routes.goals import getGoalRecommendation
 
 parser = JSONParser()
 
@@ -22,16 +23,18 @@ def get_questionnaire():
             yield json.dumps(prevResp)
 
 
-def post_questionnaire(data):
-    print(data)
+def post_questionnaire(data, user_data):
     db_data = {
-        "user_id": "123",  # todo
+        "user_id": user_data,  # todo
         "questionnaire_resp": data["questionnaireResponse"],
         "createdAt": datetime.now(timezone.utc),
         "updatedAt": datetime.now(timezone.utc),
     }
     try:
         doc_ref = db.collection("questionnaire").add(db_data)
+        goalRecommendationResp = getGoalRecommendation(
+            data["questionnaireResponse"], user_data
+        )
         # todo call getGoalRecommendation function and save the data to db
         return {"data": {}, "message": "Questionnaire stored successfully"}
     except:
