@@ -24,15 +24,14 @@ Here is the response from patient
 """
 
 GET_GOAL_TARGETS = """
-
 The above is the goal request from the patient.
 
 You are an experienced Mental health Assistant, you specialize in cognitive sciences,
 Given a patient goal you need to device a 7 days plan to help significantly reduce the patient issue
 Here is the patient goal : "anger Management"
 
-You need to give JSON object in the following format and give a incremental id for each task
-
+You need to give JSON object in the following format
+Example JSON :-
 {
     1 : {
         "id": 1
@@ -43,11 +42,12 @@ You need to give JSON object in the following format and give a incremental id f
                 "id": 1
                 "task": "Task 1",
                 "status": "",
-                "reflection": "" // this is user opinion of the task
+                "reflection": "", // this is user opinion of the task
+                "status": "TO_DO"
             }
         },
     },
-      2 : {
+    2 : {
         "id": 2,
         "objective": "Meditate",
         "description": "",
@@ -56,31 +56,15 @@ You need to give JSON object in the following format and give a incremental id f
                 "id": 1
                 "task": "Task 1",
                 "status": "",
-                "reflection": "" // this is user opinion of the task
+                "reflection": "", // this is user opinion of the task
+                "status": "TO_DO"
             }
         },
     }
 }
 
-GIVE THE 7 JSON IN ARRAY OF OBJECT FORMAT AND GIVE INPROGRESS TO EVERY STATUS
-
-INSTRUCTION:-1.FOR EXAMPLE IF THE JSON IS LIKE THIS {
-        "id": 1,
-        "task": "Practice using "I" statements to express feelings without blaming others.",
-        "status": "In progress",
-        "reflection": ""
-      },
-
-    IT SHOULD BE CONVERTED TO FOLLOWING FORMAT   {
-        "id": 1,
-        "task": "Practice using \"I\" statements to express your perspective.",
-        "status": "In Progress",
-        "reflection": ""
-      },
-    2.DONT GIVE STRING IN DOUBLE QUOTES INSIDE A STRING
-
-Escaping Quotes: Inside the JSON string, \" is used to escape double quotes within the string values. This is necessary for maintaining valid JSON format.
-
+GIVE 7 DAYS GOAL TARGETS AND INCLUDE TO_DO TO EVERY STATUS
+Important Note :- Make sure to send proper JSON with proper Escape character, incase " is in the json
 """
 
 

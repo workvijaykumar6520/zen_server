@@ -11,7 +11,7 @@ from routes.gemini import gemini_call
 from routes.users import user_call
 from routes.questionnaire import get_questionnaire
 from routes.questionnaire import post_questionnaire
-from routes.goals import getGoalRecommendation, getGoalTargets,getGoalsByUserId
+from routes.goals import getGoalRecommendation, getGoalTargets, getGoalsByUserId, streamGoalTargets
 from routes.login import login_with_google
 from auth_config import decodeAuth
 
@@ -21,6 +21,8 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 if __name__ == '__main__':
   app.run(debug=True)
+
+
 @app.route("/api/health")
 @cross_origin()
 def health_route():
@@ -165,11 +167,8 @@ def goalRecommendation():
         if isinstance(authResponse, tuple):
             auth_data, status_code = authResponse
             if not auth_data["success"]:
-                
-
                 return auth_data, status_code
         else:
-            print(authResponse["data"],"aurh response")
             data= getGoalsByUserId(authResponse["data"])
             return ({"success": True, "data": data, "message": "Successfully generated goal recommendation"}), 200
             auth_data = authResponse
@@ -190,19 +189,23 @@ def goalRecommendation():
 @cross_origin()
 def weekGoals():
     try:
-        goal_id=request.args.get("goal_id")
-        print(goal_id,"goal_id")
         logging.info("/api/goal-targets GET called")
-        # data = request.get_json()
-        # getGoalTargets(goal_id)
-        # return {"success": True, "message": ""}, 200
-        data=getGoalTargets(goal_id)
-        return ({"success": True, "data": data, "message": "Successfully generated goal recommendation"}), 200
-      
+        goal_id=request.args.get("goal_id")
+        goalTargetResp = getGoalTargets(goal_id)
 
+        return {"success": goalTargetResp["success"], "data": goalTargetResp["data"], "message": goalTargetResp["message"]}, 200
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+@app.route("/api/stream-goal-targets", methods=["GET"])
+@cross_origin()
+def streamWeekGoals():
+    try:
+        logging.info("/api/stream-goal-targets GET called")
+        goal_id=request.args.get("goal_id")
         return Response(
-            stream_with_context(getGoalTargets(goal_id)),
-            content_type="application/json",
+            stream_with_context(streamGoalTargets(goal_id)), content_type="application/json"
         )
     except Exception as e:
         logging.error(e, exc_info=True)
