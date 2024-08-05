@@ -11,7 +11,7 @@ from routes.gemini import gemini_call
 from routes.users import user_call
 from routes.questionnaire import get_questionnaire
 from routes.questionnaire import post_questionnaire
-from routes.goals import getGoalRecommendation, getGoalTargets
+from routes.goals import getGoalRecommendation, getGoalTargets,getGoalsByUserId
 from routes.login import login_with_google
 from auth_config import decodeAuth
 
@@ -19,8 +19,8 @@ from auth_config import decodeAuth
 
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
-
-
+if __name__ == '__main__':
+  app.run(debug=True)
 @app.route("/api/health")
 @cross_origin()
 def health_route():
@@ -134,21 +134,21 @@ def saveQuestionnaire():
     try:
         logging.info("/api/questionnaire POST api called")
         data = request.get_json()
-        # authResponse = decodeAuth(request.headers)
-        # if isinstance(authResponse, tuple):
-        #     auth_data, status_code = authResponse
-        #     if not auth_data["success"]:
-        #         return auth_data, status_code
-        # else:
-        #     auth_data = authResponse
-        #     if not auth_data["success"]:
-        #         return auth_data, 401
+        authResponse = decodeAuth(request.headers)
+        if isinstance(authResponse, tuple):
+            auth_data, status_code = authResponse
+            if not auth_data["success"]:
+                return auth_data, status_code
+        else:
+            auth_data = authResponse
+            if not auth_data["success"]:
+                return auth_data, 401
 
-        # user_data = auth_data.get("data")
-        # if not user_data:
-        #     return {"success": False, "message": "User data not found"}, 400
+        user_data = auth_data.get("data")
+        if not user_data:
+            return {"success": False, "message": "User data not found"}, 400
 
-        response = post_questionnaire(data, "123")
+        response = post_questionnaire(data,authResponse["data"] )
         return {"questionnaire_response": response}, 200
     except Exception as e:
         logging.error(e, exc_info=True)
@@ -160,10 +160,27 @@ def saveQuestionnaire():
 def goalRecommendation():
     try:
         logging.info("/api/goal-recommendation GET called")
-        return Response(
-            stream_with_context(getGoalRecommendation()),
-            content_type="application/json",
-        )
+        authResponse = decodeAuth(request.headers)
+    
+        if isinstance(authResponse, tuple):
+            auth_data, status_code = authResponse
+            if not auth_data["success"]:
+                
+
+                return auth_data, status_code
+        else:
+            print(authResponse["data"],"aurh response")
+            data= getGoalsByUserId(authResponse["data"])
+            return ({"success": True, "data": data, "message": "Successfully generated goal recommendation"}), 200
+            auth_data = authResponse
+            if not auth_data["success"]:
+                return auth_data, 401
+
+        # return Response(
+        #     stream_with_context(getGoalRecommendation()),
+        #     content_type="application/json",
+        # )
+
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
@@ -173,10 +190,18 @@ def goalRecommendation():
 @cross_origin()
 def weekGoals():
     try:
+        goal_id=request.args.get("goal_id")
+        print(goal_id,"goal_id")
         logging.info("/api/goal-targets GET called")
-        data = request.get_json()
+        # data = request.get_json()
+        # getGoalTargets(goal_id)
+        # return {"success": True, "message": ""}, 200
+        data=getGoalTargets(goal_id)
+        return ({"success": True, "data": data, "message": "Successfully generated goal recommendation"}), 200
+      
+
         return Response(
-            stream_with_context(getGoalTargets(data)),
+            stream_with_context(getGoalTargets(goal_id)),
             content_type="application/json",
         )
     except Exception as e:

@@ -37,8 +37,8 @@ def post_questionnaire(data, user_data):
         )
         # todo call getGoalRecommendation function and save the data to db
         return {"data": {}, "message": "Questionnaire stored successfully"}
-    except:
+    except Exception as e:
         return {
             "data": {},
-            "message": "Unable to stored the questionnaire, please try again",
+            "message": f"Unable to store the questionnaire: {str(e)}",
         }

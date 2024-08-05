@@ -12,7 +12,7 @@ Short Description
 Status
 
 long description
-benefits
+benefits:["benefit1","benefit2","benefit3"]
 }
 
 Give the response in array of objects.
@@ -32,10 +32,23 @@ Given a patient goal you need to device a 7 days plan to help significantly redu
 Here is the patient goal : "anger Management"
 
 You need to give JSON object in the following format and give a incremental id for each task
-```json
+
 {
     1 : {
-        id: 1
+        "id": 1
+        "objective": "Meditate",
+        "description": "",
+        "tasks": {
+            1: {
+                "id": 1
+                "task": "Task 1",
+                "status": "",
+                "reflection": "" // this is user opinion of the task
+            }
+        },
+    },
+      2 : {
+        "id": 2,
         "objective": "Meditate",
         "description": "",
         "tasks": {
@@ -50,4 +63,80 @@ You need to give JSON object in the following format and give a incremental id f
 }
 
 GIVE THE 7 JSON IN ARRAY OF OBJECT FORMAT AND GIVE INPROGRESS TO EVERY STATUS
+
+INSTRUCTION:-1.FOR EXAMPLE IF THE JSON IS LIKE THIS {
+        "id": 1,
+        "task": "Practice using "I" statements to express feelings without blaming others.",
+        "status": "In progress",
+        "reflection": ""
+      },
+
+    IT SHOULD BE CONVERTED TO FOLLOWING FORMAT   {
+        "id": 1,
+        "task": "Practice using \"I\" statements to express your perspective.",
+        "status": "In Progress",
+        "reflection": ""
+      },
+    2.DONT GIVE STRING IN DOUBLE QUOTES INSIDE A STRING
+
+Escaping Quotes: Inside the JSON string, \" is used to escape double quotes within the string values. This is necessary for maintaining valid JSON format.
+
+"""
+
+
+
+MODIFIED_GET_GOAL_TARGETS = """ 
+The above is the goal request from the patient.
+You are an experienced Mental Health Assistant specializing in cognitive sciences. Given a patient's goal, you need to devise a 7-day plan to help significantly reduce the patient's issue.
+
+You need to provide a JSON object in the following format, giving an incremental ID for each task: {
+    1 : {
+        "id": 1,
+        "objective": "Objective 1",
+        "description": "Description of the objective",
+        "tasks": {
+            1: {
+                "id": 1,
+                "task": "Task 1 description",
+                "status": "In Progress",
+                "reflection": "" // This is the user’s opinion of the task
+            },
+            2: {
+                "id": 2,
+                "task": "Task 2 description",
+                "status": "In Progress",
+                "reflection": ""
+            }
+        }
+    },
+    2 : {
+        "id": 2,
+        "objective": "Objective 2",
+        "description": "Description of the objective",
+        "tasks": {
+            1: {
+                "id": 3,
+                "task": "Task 1 description",
+                "status": "In Progress",
+                "reflection": "" // This is the user’s opinion of the task
+            }
+        }
+    }
+}
+
+Instructions:
+
+For any text inside the JSON that includes double quotes, escape the double quotes by using \" to maintain valid JSON formatting.
+
+Do not use single quotes inside the JSON. If you need to include double quotes within the string values, escape them as follows:
+
+Incorrect: "task": "Practice using "I" statements"
+
+Correct: "task": "Practice using \"I\" statements"
+
+Ensure that each task has an incremental ID, starting from 1 and continuing through all tasks in the 7-day plan.
+
+The status for each task should be "In Progress", and reflection should be an empty string "".
+
+Return the 7 JSON objects as an array in the format provided.
 """

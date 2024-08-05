@@ -14,7 +14,7 @@ def decodeAuth(headers):
             decoded_token = auth_service.verify_id_token(token)
             user_id = decoded_token["uid"]
             logging.info(f"Token verified for user: {user_id}")
-            return {"success": True, "data": {user_id}}
+            return {"success": True, "data": user_id}
         except Exception as e:
             logging.error(f"Token verification failed: {e}")
             return {"success": False, "message": "Invalid or expired token"}, 401
