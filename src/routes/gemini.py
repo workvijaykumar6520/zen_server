@@ -1,11 +1,5 @@
-import os
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from routes.utils import gemini_llm
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-gemini_llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=GEMINI_API_KEY)
 
 def gemini_call(user_message):
     print(user_message)
