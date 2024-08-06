@@ -11,7 +11,13 @@ from routes.gemini import gemini_call
 from routes.users import user_call
 from routes.questionnaire import get_questionnaire
 from routes.questionnaire import post_questionnaire
-from routes.goals import getGoalRecommendation, getGoalTargets, getGoalsByUserId, streamGoalTargets
+from routes.goals import (
+    getGoalRecommendation,
+    getGoalTargets,
+    getGoalsByUserId,
+    streamGoalTargets,
+    editGoalsTargets,
+)
 from routes.login import login_with_google
 from auth_config import decodeAuth
 
@@ -19,8 +25,8 @@ from auth_config import decodeAuth
 
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
-if __name__ == '__main__':
-  app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
 
 
 @app.route("/api/health")
@@ -136,6 +142,7 @@ def saveQuestionnaire():
     try:
         logging.info("/api/questionnaire POST api called")
         data = request.get_json()
+        print(data)
         authResponse = decodeAuth(request.headers)
         if isinstance(authResponse, tuple):
             auth_data, status_code = authResponse
@@ -150,7 +157,7 @@ def saveQuestionnaire():
         if not user_data:
             return {"success": False, "message": "User data not found"}, 400
 
-        response = post_questionnaire(data,authResponse["data"] )
+        response = post_questionnaire(data, authResponse["data"])
         return {"questionnaire_response": response}, 200
     except Exception as e:
         logging.error(e, exc_info=True)
@@ -163,18 +170,20 @@ def goalRecommendation():
     try:
         logging.info("/api/goal-recommendation GET called")
         authResponse = decodeAuth(request.headers)
-    
+
         if isinstance(authResponse, tuple):
             auth_data, status_code = authResponse
             if not auth_data["success"]:
                 return auth_data, status_code
         else:
-            data= getGoalsByUserId(authResponse["data"])
-            return ({"success": True, "data": data, "message": "Successfully generated goal recommendation"}), 200
-            auth_data = authResponse
-            if not auth_data["success"]:
-                return auth_data, 401
-
+            data = getGoalsByUserId(authResponse["data"])
+            return (
+                {
+                    "success": True,
+                    "data": data,
+                    "message": "Successfully generated goal recommendation",
+                }
+            ), 200
         # return Response(
         #     stream_with_context(getGoalRecommendation()),
         #     content_type="application/json",
@@ -190,23 +199,43 @@ def goalRecommendation():
 def weekGoals():
     try:
         logging.info("/api/goal-targets GET called")
-        goal_id=request.args.get("goal_id")
+        goal_id = request.args.get("goal_id")
         goalTargetResp = getGoalTargets(goal_id)
 
-        return {"success": goalTargetResp["success"], "data": goalTargetResp["data"], "message": goalTargetResp["message"]}, 200
+        return {
+            "success": goalTargetResp["success"],
+            "data": goalTargetResp["data"],
+            "message": goalTargetResp["message"],
+        }, 200
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
+
 
 @app.route("/api/stream-goal-targets", methods=["GET"])
 @cross_origin()
 def streamWeekGoals():
     try:
         logging.info("/api/stream-goal-targets GET called")
-        goal_id=request.args.get("goal_id")
+        goal_id = request.args.get("goal_id")
         return Response(
-            stream_with_context(streamGoalTargets(goal_id)), content_type="application/json"
+            stream_with_context(streamGoalTargets(goal_id)),
+            content_type="application/json",
         )
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/edit-goals", methods=["PATCH"])
+@cross_origin()
+def editGoals():
+    try:
+        logging.info("/api/edit-goals")
+        goal_id = request.args.get("goal_id")
+        data = request.get_json()
+        goalUpdateResponse = editGoalsTargets(goal_id, data)
+        return goalUpdateResponse
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
