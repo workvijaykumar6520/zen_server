@@ -9,14 +9,12 @@ The below is the example json you need to provide as response, Give atleast 5 go
 {
 title 
 Short Description
-Status
 
 long description
 benefits:["benefit1","benefit2","benefit3"]
 }
 
 Give the response in array of objects.
-Give status as inprogress.
 Think like a professional therapist and give the response
 
 Here is the response from patient

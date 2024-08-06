@@ -169,8 +169,7 @@ def goalRecommendation():
             if not auth_data["success"]:
                 return auth_data, status_code
         else:
-            data= getGoalsByUserId(authResponse["data"])
-            return ({"success": True, "data": data, "message": "Successfully generated goal recommendation"}), 200
+            return getGoalsByUserId(authResponse["data"])
             auth_data = authResponse
             if not auth_data["success"]:
                 return auth_data, 401
