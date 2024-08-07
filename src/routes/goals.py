@@ -113,7 +113,7 @@ def getGoalTargets(goal_id):
                 try:
                     # storing the target goal in DB
                     db.collection("goal").document(goal_id).update(
-                        {"goalPlan": prevResp}
+                        {"goalPlan": response}
                     )
                 except Exception as e:
                     print("exception occurred while inserting in DB", e)
