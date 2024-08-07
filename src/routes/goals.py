@@ -23,25 +23,30 @@ gemini_llm = ChatGoogleGenerativeAI(
     model="gemini-pro", google_api_key=GEMINI_API_KEY, stream=True
 )
 
+def getGoalRecommendation(questionnaireResp, user_id):
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
 
-def getGoalRecommendation(questionnaireResp, user_data):
+
     # Convert questionnaire response to JSON string
     questionnaireResponseString = json.dumps(questionnaireResp)
     promptString = GET_GOAL_RECOMMENDATION + questionnaireResponseString
 
     # Invoke the Gemini LLM to get goal recommendations
-    result = gemini_llm.invoke(promptString)
-    if hasattr(result, "content"):
+    # result = gemini_llm.invoke(promptString)
+
+    result = model.generate_content(promptString)
+    if result.text:
         try:
             # Parse the result content
-            data = json.loads(result.content)
+            data = json.loads(result.text)
 
             # Store each goal in Firestore and include the generated document ID in the data
             for goal in data:
                 # Prepare the goal data with additional fields
                 db_data = {
-                    "user_id": user_data,  # User ID for whom the goal is being created
-                    "goal_status": "todo",  # Status of the goal
+                    "user_id": user_id,  # User ID for whom the goal is being created
+                    "goal_status": "TO_DO",  # Status of the goal
                     "createdAt": datetime.now(timezone.utc),
                     "updatedAt": datetime.now(timezone.utc),
                     **goal,  # Copy the entire goal object
@@ -59,27 +64,30 @@ def getGoalRecommendation(questionnaireResp, user_data):
                 # Update the document with the generated ID
                 db.collection("goal").document(doc_ref.id).update({"id": doc_ref.id})
 
-            return {"data": {}, "message": "Goals stored successfully"}
+            return {"success": True,"data": data, "message": "Goals stored successfully"}
 
         except json.JSONDecodeError as e:
             print(f"Failed to decode JSON: {e}")
-            return {"data": {}, "message": "Failed to decode JSON response"}
+            return {"success": False,"data": {}, "message": "Failed to decode JSON response"}
         except Exception as e:
             print(f"An error occurred: {e}")
-            return {
-                "data": {},
-                "message": "Unable to store the goals, please try again",
-            }
-
-    return {"data": {}, "message": "No content in result"}
+            return {"success": False,"data": {}, "message": "Unable to store the goals, please try again"}
+    return {"success": False,"data": {}, "message": "No content in result"}
 
 
-def getGoalsByUserId(data):
-    response = db.collection("goal").where("user_id", "==", data).get()
-
+def getGoalsByUserId(user_id):
+    response=  db.collection("goal").where("user_id", "==", user_id).get()
     goals = [{"id": doc.id, **doc.to_dict()} for doc in response]
-    print(goals, "response")
-    return goals
+    if goals:
+        return {"success": True,"data": goals, "message": "No content in result"}
+    else:
+        # we make gemini call and store in DB from here
+        print("making gemini call")
+        questionnaire_response = db.collection("questionnaire").where("user_id", "==", user_id).get()
+        questionnaire_response = [{"id": doc.id, **doc.to_dict()} for doc in questionnaire_response]
+
+        if questionnaire_response:
+            return getGoalRecommendation(questionnaire_response[0]["questionnaire_resp"], user_id)
 
 
 def getGoalTargets(goal_id):
@@ -131,7 +139,6 @@ def getGoalTargets(goal_id):
 
 
 def streamGoalTargets(goal_id):
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(
         "gemini-1.5-flash", generation_config={"response_mime_type": "application/json"}
