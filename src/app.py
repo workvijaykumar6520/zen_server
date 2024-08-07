@@ -20,6 +20,7 @@ from routes.goals import (
 )
 from routes.login import login_with_google
 from auth_config import decodeAuth
+from routes.chat import chat_gemini, getChatData
 
 # Note :- THIS FILE SHOULD ONLY CONTAIN ROUTING AND LOGGING
 
@@ -59,7 +60,8 @@ def health_route():
 
 @app.route("/api/login", methods=["POST"])
 def login():
-    try:
+    try:        
+        logging.info("/api/login called")
         # Get the ID token from the request
         id_token = request.json["idToken"]
 
@@ -72,6 +74,7 @@ def login():
             return jsonify({"status": "failed"}), 400
 
     except Exception as e:
+        logging.error(e, exc_info=True, stack_info=True)
         return jsonify({"error": str(e)}), 500
 
 
@@ -235,4 +238,29 @@ def editGoals():
         return goalUpdateResponse
     except Exception as e:
         logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+@app.route("/api/get-chat", methods=["GET"])
+@cross_origin()
+def getChat():
+    try:
+        logging.info("/api/stream-goal-targets GET called")
+        resp = getChatData()
+        return {"success": True, "data": resp, "message": "Successfully fetched chat data"}, 500
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+@app.route("/api/chat", methods=["POST"])
+@cross_origin()
+def chat():
+    try:
+        logging.info("/api/chat GET called")
+        data = request.get_json()
+        user_message = data.get('user_message')
+        session_id = data.get('session_id')
+        resp = chat_gemini(user_message, session_id)
+        return {"success": True, "data": resp, "message": "Successful"}, 500
+    except Exception as e:
+        logging.error(f"error occurred in chat {e}", exc_info=True, stack_info=True)
         return {"success": False, "message": "Internal server error"}, 500
