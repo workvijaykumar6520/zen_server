@@ -1,70 +1,89 @@
 import os
+import time
 from flask import jsonify
 from langchain.chains import ConversationChain
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import messages_from_dict, messages_to_dict
 from langchain.memory import ConversationSummaryMemory
+from db_config import db, firestore
+from constants.constants import mental_health_prompt_template
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 gemini_llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=GEMINI_API_KEY)
-summary = ConversationSummaryMemory(llm=gemini_llm)
+conversation_summary_memory = ConversationSummaryMemory(llm=gemini_llm)
 
-def getChatData():
-    # we need to implement Python version of the below JS code variant
+def getChatData(user_id, start_after=None, limit=999):
+    """Retrieves chat data for a given user ID with pagination.
+
+    Args:
+        user_id (str): The ID of the user.
+        start_after (firestore.DocumentSnapshot, optional): The document to start after.
+        limit (int, optional): The number of documents to fetch.
+
+    Returns:
+        list: A list of chat documents.
+    """
+
+    chats_ref = db.collection('chat').where('user_id', '==', user_id)
+
+    if start_after:
+        chats_ref = chats_ref.start_after(start_after)
+
+    docs = chats_ref.limit(limit).order_by('created_at', direction=firestore.Query.DESCENDING).get()
+
+    chat_data = [doc.to_dict() for doc in docs]
+
+    return chat_data
 
 
-    # const sessionRef = db.collection('session').doc('user_id');
-    # const query = sessionRef.collection('chats').where('session_id', '==', session_id);
+def chat_gemini(user_message, user_id):
+    # Retrieve summary from chat_summary collection
+    summary_doc_ref = db.collection('chat_summary').document(user_id)
+    summary_doc = summary_doc_ref.get().to_dict()
 
-    # query.get().then((snapshot) => {
-    #     snapshot.forEach((doc) => {
-    #         print(doc.id, '=>', doc.data());
-    #     });
-    # });
-    pass
+    retrieved_summary = None
+    if summary_doc:
+        retrieved_summary = summary_doc['summary']
 
+    summary = conversation_summary_memory
+    if retrieved_summary:
+        # Clear existing memory and set retrieved summary
+        summary.clear()
+        summary.buffer = retrieved_summary
 
-chat_obj= {}
-def chat_gemini(user_message, session_id):
-    retrieve_from_db = chat_obj.get(session_id, {}) or {}
-    print("\n\n retrieved for user", session_id, " -> ", retrieve_from_db)
-
-    retrieved_memory = summary
-    if(retrieve_from_db):
-        print("\n\nRoger", retrieve_from_db)
-        retrieved_messages = messages_from_dict(retrieve_from_db["messages"])
-        retrieved_summary = retrieve_from_db["conversation_summary"]
-        
-
-        entities = retrieved_memory.clear()
-        print("\n\nafter entities cleared", entities)
-        if(retrieved_summary):
-            print("in if ", retrieved_summary)
-            retrieved_memory.buffer = retrieved_summary
-
-            entities = retrieved_memory.buffer
-            print("\n\nafter adding retrieved entities", entities)
+    complete_prompt = f"{mental_health_prompt_template}\n\nNew Messages:\n{user_message}"
 
     conversation_summary_chain = ConversationChain(
         llm=gemini_llm,
         verbose=True,
-        memory=retrieved_memory
+        memory=summary
     )
-    conversation_summary_chain.run(user_message)
-    
+    conversation_summary_chain.run(complete_prompt)
+
     extracted_messages = conversation_summary_chain.memory.chat_memory.messages
 
-    print("\n\nextracted_messages", extracted_messages)
+    # Update chat_summary with current conversation summary
+    summary_doc_ref.set({
+        'summary': summary.buffer
+    }, merge=True)  # Use merge to update only the summary field
 
-    print("\n\n", "retrieved_memory", retrieved_memory)
-    
-    # we also need to store the buffer in the DB
-    conversation_summary = retrieved_memory.buffer
+    # Store messages in chat collection (one for AI and one for human)
+    chat_ref = db.collection('chat')
 
-    # we need to store user messages in DB extracted_message in DB
-    chat_obj[session_id] = { 
-        "conversation_summary" : conversation_summary,
-        "messages" : messages_to_dict(extracted_messages)
-    }
+    chat_ref.add({
+        'chat_from': 'HUMAN',
+        'user_id': user_id,
+        'message': user_message,
+        'created_at': round(time.time() * 1000)
+    })
 
-    return {"response": chat_obj}
+    extracted_message = messages_to_dict(extracted_messages)
+
+    chat_ref.add({
+        'chat_from': 'AI',
+        'user_id': user_id,
+        'message': extracted_message[1]["data"]["content"],
+        'created_at': round(time.time() * 1000)
+    })
+    return extracted_message[1]["data"]["content"] or ""
