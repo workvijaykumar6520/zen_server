@@ -1,6 +1,6 @@
-GET_QUESTIONNAIRE = """
+from constants.constants import mental_health_prompt_template
 
-You are an experienced Mental health Assistant, you specialize in cognitive sciences and Mental Wellness Assessment
+GET_QUESTIONNAIRE = mental_health_prompt_template + """
 
 you need to formulate a pre consultation questionnaire to determine the mental state of the patient the questionnaire sections might include the following :-
 ["Activity Preference", "Goal Preferences", "commitment level"] include any other sections you like 

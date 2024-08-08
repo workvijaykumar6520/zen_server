@@ -1,5 +1,6 @@
-GET_GOAL_RECOMMENDATION = """
-You are an experienced Mental health Assistant, you specialize in cognitive sciences and Mental Wellness Assessment
+from constants.constants import mental_health_prompt_template
+
+GET_GOAL_RECOMMENDATION =  mental_health_prompt_template + """
 
 you need to formulate a pre goal recommendation to help the mental state of the patient :-
 The latest questionnaire answered by patient is given below use that and give some best goals that help the patient change the current mood and mental state.
@@ -21,13 +22,12 @@ Here is the response from patient
 
 """
 
-GET_GOAL_TARGETS = """
-The above is the goal request from the patient.
+GET_GOAL_TARGETS = mental_health_prompt_template + """
 
-You are an experienced Mental health Assistant, you specialize in cognitive sciences,
 Given a patient goal you need to device a 7 days plan to help significantly reduce the patient issue
 Here is the patient goal : "anger Management"
 
+The above is the goal request from the patient.
 You need to give JSON object in the following format
 Example JSON :-
 {

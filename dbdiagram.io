@@ -48,16 +48,20 @@ Table goal {
   updated_at timestamp
 }
 
+// Ignoring sessions for now
+/*
 Table session {
   session_id uuid
   title varchar
   user_id uuid
 }
+*/
 
 Table chat {
   id integer [primary key]
   chat_from varchar
-  session_id uuid
+  // session_id uuid
+  user_id uuid
   message varchar
   created_at timestamp
 }

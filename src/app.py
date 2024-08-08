@@ -24,6 +24,7 @@ from routes.login import login_with_google
 from routes.dashboard import get_user_goals_progress, get_motivational_quote
 from auth_config import decodeAuth
 from routes.dashboard import get_motivational_quote, get_user_goals_progress
+from routes.chat import chat_gemini, getChatData
 
 # Note :- THIS FILE SHOULD ONLY CONTAIN ROUTING AND LOGGING
 
@@ -63,7 +64,8 @@ def health_route():
 
 @app.route("/api/login", methods=["POST"])
 def login():
-    try:
+    try:        
+        logging.info("/api/login called")
         # Get the ID token from the request
         id_token = request.json["idToken"]
 
@@ -76,6 +78,7 @@ def login():
             return jsonify({"status": "failed"}), 400
 
     except Exception as e:
+        logging.error(e, exc_info=True, stack_info=True)
         return jsonify({"error": str(e)}), 500
 
 
@@ -300,4 +303,34 @@ def get_dashboard_data(user_id):
 
     except Exception as e:
         logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+@app.route("/api/get-chat", methods=["GET"])
+@cross_origin()
+def getChat():
+    try:
+        logging.info("/api/stream-goal-targets GET called")
+        data = request.get_json()
+        user_id = data.get('user_id')
+        start_after = data.get('start_after')
+        limit = data.get('limit')
+
+        resp = getChatData(user_id, start_after, limit)
+        return {"success": True, "data": resp, "message": "Successfully fetched chat data"}, 200
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+@app.route("/api/chat", methods=["POST"])
+@cross_origin()
+def chat():
+    try:
+        logging.info("/api/chat GET called")
+        data = request.get_json()
+        user_message = data.get('user_message')
+        user_id = data.get('user_id')
+        resp = chat_gemini(user_message, user_id)
+        return {"success": True, "data": resp, "message": "Successful"}, 200
+    except Exception as e:
+        logging.error(f"error occurred in chat {e}", exc_info=True, stack_info=True)
         return {"success": False, "message": "Internal server error"}, 500
