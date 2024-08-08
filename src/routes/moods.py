@@ -42,17 +42,13 @@ def getMoodsPercentage(user_id):
         mood_records = [doc.to_dict() for doc in response]
         print(mood_records)
 
-        # Extract mood values and convert to integers
-        mood_values = [
-            int(record["mood"]) for record in mood_records if record["mood"].isdigit()
-        ]
+        # Extract mood values and calculate the average
+        mood_values = [record["mood"] for record in mood_records]
 
-        # Calculate the average mood
         if mood_values:
             average_mood = sum(mood_values) / len(mood_values)
         else:
             average_mood = 0
-
         return {
             "success": True,
             "data": average_mood,
