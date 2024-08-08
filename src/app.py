@@ -17,9 +17,13 @@ from routes.goals import (
     getGoalsByUserId,
     streamGoalTargets,
     editGoalsTargets,
+    updateTaskStatus,
 )
+from routes.moods import addMoodRecords, getMoodsPercentage
 from routes.login import login_with_google
+from routes.dashboard import get_user_goals_progress, get_motivational_quote
 from auth_config import decodeAuth
+from routes.dashboard import get_motivational_quote, get_user_goals_progress
 from routes.chat import chat_gemini, getChatData
 
 # Note :- THIS FILE SHOULD ONLY CONTAIN ROUTING AND LOGGING
@@ -236,6 +240,67 @@ def editGoals():
         data = request.get_json()
         goalUpdateResponse = editGoalsTargets(goal_id, data)
         return goalUpdateResponse
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/moods", methods=["POST"])
+@cross_origin()
+def addMoods():
+    try:
+        logging.info("/api/moods")
+        data = request.get_json()
+        addMoodResponse = addMoodRecords(data)
+        return addMoodResponse
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/edit-task", methods=["PATCH"])
+@cross_origin()
+def editTaskStatus():
+    try:
+        logging.info("/api/edit-goals")
+        goal_id = request.json.get("goal_id")
+        day_id = request.json.get("day_id")
+        task_id = request.json.get("task_id")
+        status = request.json.get("status")
+        # data = request.get_json()
+        goalUpdateResponse = updateTaskStatus(goal_id, day_id, task_id, status)
+        return goalUpdateResponse
+    except Exception as e:
+        logging.error(e, exc_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+@app.route("/api/get-dashboard-data/<user_id>", methods=["GET"])
+@cross_origin()
+def get_dashboard_data(user_id):
+    try:
+        if not user_id:
+            return {"success": False, "message": "user_id is required"}, 400
+
+        # Get progress for user's goals
+        user_goals_progress = get_user_goals_progress(user_id)
+        if not user_goals_progress.get("success", True):
+            return user_goals_progress
+
+        # Get motivational quote
+        quote = get_motivational_quote()
+        moodsPercentage = getMoodsPercentage(user_id)
+
+        # Combine goals progress and quote into response
+        response = {
+            "success": True,
+            "goals": user_goals_progress.get("goals", []),
+            "quote": quote,
+            "mood_percentage": moodsPercentage.get('data'),
+        }
+
+        return jsonify(response)
+
     except Exception as e:
         logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500

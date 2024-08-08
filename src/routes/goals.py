@@ -169,7 +169,7 @@ def streamGoalTargets(goal_id):
                     yield json.dumps(prevResp)
         try:
             # storing the target goal in DB
-            db.collection("goal").document(goal_id).update({"goalPlan": prevResp})
+            db.collection("goal").document(goal_id).update({"goalPlan": prevResp,"goal_status":"IN_PROGRESS"})
         except Exception as e:
             print("exception occurred while inserting in DB", e)
 
@@ -214,3 +214,58 @@ def editGoalsTargets(goal_id, data):
             return {"success": False, "message": "Document not found"}
     except Exception as e:
         print("exception occurred while updating:", e)
+
+
+
+def updateTaskStatus(goal_id, day_id, task_id, new_status):
+    try:
+        # Reference to the specific goal document
+        goal_doc_ref = db.collection('goal').document(goal_id)
+
+        # Build the path to the specific task using Firestore's field path syntax
+        task_path = f'goalPlan.{day_id}.tasks.{task_id}.status'
+
+        # Update the task's status
+        goal_doc_ref.update({task_path: new_status})
+        updateDayStatusIfAllTasksDone(goal_id, day_id)
+
+        print('Task status updated successfully')
+        return {"success": True, "message": ""}, 200
+    except Exception as e:
+        print(f'Error updating task status: {e}')
+        return {"success": False, "message": "Internal server error"}, 500
+    
+
+def updateDayStatusIfAllTasksDone(goal_id, day_id):
+    try:
+        # Reference to the specific goal document
+        goal_doc_ref = db.collection('goal').document(goal_id)
+
+        # Get the document snapshot
+        goal_doc = goal_doc_ref.get()
+        
+        if not goal_doc.exists:
+            print('Goal document does not exist')
+            return
+
+        # Retrieve the data
+        goal_data = goal_doc.to_dict()
+        
+        # Retrieve tasks for the specified day
+        tasks = goal_data.get('goalPlan', {}).get(day_id, {}).get('tasks', {})
+
+        # Check if all tasks are done
+        all_tasks_done = all(task.get('status') == 'DONE' for task in tasks.values())
+
+        if all_tasks_done:
+            # Update the day status to DONE
+            day_path = f'goalPlan.{day_id}.status'
+            goal_doc_ref.update({day_path: 'DONE'})
+            print('Day status updated to DONE')
+        else:
+            day_path = f'goalPlan.{day_id}.status'
+            goal_doc_ref.update({day_path: 'TO_DO'})
+            print('Not all tasks are done yet')
+
+    except Exception as e:
+        print(f'Error updating day status: {e}')
