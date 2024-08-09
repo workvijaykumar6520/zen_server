@@ -286,6 +286,8 @@ def get_dashboard_data(user_id):
         user_goals_progress = get_user_goals_progress(user_id)
         if not user_goals_progress.get("success", True):
             return user_goals_progress
+        
+
 
         # Get motivational quote
         quote = get_motivational_quote()
@@ -297,6 +299,10 @@ def get_dashboard_data(user_id):
             "goals": user_goals_progress.get("goals", []),
             "quote": quote,
             "mood_percentage": moodsPercentage.get('data'),
+            "quote": quote,
+            "overall_completion_percentage": user_goals_progress.get("overall_completion_percentage", 0),
+            "total_in_progress_goals": user_goals_progress.get("total_in_progress_goals", 0),
+            "completed_goals_count": user_goals_progress.get("completed_goals_count", 0)
         }
 
         return jsonify(response)
@@ -310,10 +316,11 @@ def get_dashboard_data(user_id):
 def getChat():
     try:
         logging.info("/api/stream-goal-targets GET called")
-        data = request.get_json()
-        user_id = data.get('user_id')
-        start_after = data.get('start_after')
-        limit = data.get('limit')
+        # data = request.get_json()
+        user_id=request.args.get("user_id")
+        # user_id = data.get('user_id')
+        start_after = request.args.get('start_after')
+        limit = request.args.get('limit')
 
         resp = getChatData(user_id, start_after, limit)
         return {"success": True, "data": resp, "message": "Successfully fetched chat data"}, 200

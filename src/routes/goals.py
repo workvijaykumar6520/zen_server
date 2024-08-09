@@ -236,7 +236,64 @@ def updateTaskStatus(goal_id, day_id, task_id, new_status):
         return {"success": False, "message": "Internal server error"}, 500
     
 
-def updateDayStatusIfAllTasksDone(goal_id, day_id):
+# def updateDayStatusIfAllTasksDone(goal_id, day_id):
+#     try:
+#         # Reference to the specific goal document
+#         goal_doc_ref = db.collection('goal').document(goal_id)
+
+#         # Get the document snapshot
+#         goal_doc = goal_doc_ref.get()
+        
+#         if not goal_doc.exists:
+#             print('Goal document does not exist')
+#             return
+
+#         # Retrieve the data
+#         goal_data = goal_doc.to_dict()
+        
+#         # Retrieve tasks for the specified day
+#         tasks = goal_data.get('goalPlan', {}).get(day_id, {}).get('tasks', {})
+
+#         # Check if all tasks are done
+#         all_tasks_done = all(task.get('status') == 'DONE' for task in tasks.values())
+
+#         if all_tasks_done:
+#             # Update the day status to DONE
+#             day_path = f'goalPlan.{day_id}.status'
+#             goal_doc_ref.update({day_path: 'DONE'})
+#             print('Day status updated to DONE')
+#         else:
+#             day_path = f'goalPlan.{day_id}.status'
+#             goal_doc_ref.update({day_path: 'TO_DO'})
+#             print('Not all tasks are done yet')
+
+#     except Exception as e:
+#         print(f'Error updating day status: {e}')
+
+
+
+
+def updateTaskStatus(goal_id, day_id, task_id, new_status):
+    try:
+        # Reference to the specific goal document
+        goal_doc_ref = db.collection('goal').document(goal_id)
+
+        # Build the path to the specific task using Firestore's field path syntax
+        task_path = f'goalPlan.{day_id}.tasks.{task_id}.status'
+
+        # Update the task's status
+        goal_doc_ref.update({task_path: new_status})
+        # Call function to update day and goal statuses
+        updateDayStatusIfAllTasksDone(goal_id)
+
+        print('Task status updated successfully')
+        return {"success": True, "message": ""}, 200
+    except Exception as e:
+        print(f'Error updating task status: {e}')
+        return {"success": False, "message": "Internal server error"}, 500
+    
+
+def updateDayStatusIfAllTasksDone(goal_id):
     try:
         # Reference to the specific goal document
         goal_doc_ref = db.collection('goal').document(goal_id)
@@ -251,21 +308,32 @@ def updateDayStatusIfAllTasksDone(goal_id, day_id):
         # Retrieve the data
         goal_data = goal_doc.to_dict()
         
-        # Retrieve tasks for the specified day
-        tasks = goal_data.get('goalPlan', {}).get(day_id, {}).get('tasks', {})
-
-        # Check if all tasks are done
-        all_tasks_done = all(task.get('status') == 'DONE' for task in tasks.values())
-
-        if all_tasks_done:
-            # Update the day status to DONE
-            day_path = f'goalPlan.{day_id}.status'
-            goal_doc_ref.update({day_path: 'DONE'})
-            print('Day status updated to DONE')
+        # Retrieve days and their statuses
+        goal_plan = goal_data.get('goalPlan', {})
+        
+        # Check if all days are DONE
+        all_days_done = True
+        for day_id, day_data in goal_plan.items():
+            tasks = day_data.get('tasks', {})
+            all_tasks_done = all(task.get('status') == 'DONE' for task in tasks.values())
+            
+            if all_tasks_done:
+                day_path = f'goalPlan.{day_id}.status'
+                goal_doc_ref.update({day_path: 'DONE'})
+                print(f'Day {day_id} status updated to DONE')
+            else:
+                day_path = f'goalPlan.{day_id}.status'
+                goal_doc_ref.update({day_path: 'TO_DO'})
+                all_days_done = False
+                print(f'Not all tasks are done yet for day {day_id}')
+        
+        # Update the goal status if all days are DONE
+        if all_days_done:
+            goal_doc_ref.update({'goal_status': 'DONE'})
+            print('Goal status updated to DONE')
         else:
-            day_path = f'goalPlan.{day_id}.status'
-            goal_doc_ref.update({day_path: 'TO_DO'})
-            print('Not all tasks are done yet')
+            goal_doc_ref.update({'goal_status': 'IN_PROGRESS'})
+            print('Not all days are done yet')
 
     except Exception as e:
         print(f'Error updating day status: {e}')
