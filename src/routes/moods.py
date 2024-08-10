@@ -128,7 +128,7 @@ def get_youtube_links(query):
     """
     url = (
         f"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q={query}"
-        f"&type=video&key=AIzaSyCeDA5742dk5_z7kAeuJraLrWyXiKnNeKY"
+        f"&type=video&key=AIzaSyCNoUN4nPASA9Wfzv9hFv1cpUq3_KtDS2c"
     )
     try:
         response = requests.get(url)
