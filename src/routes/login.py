@@ -1,5 +1,6 @@
 import json
 from db_config import db,auth_service
+import time
 
 
 def login_with_google(id_token):
@@ -16,6 +17,7 @@ def login_with_google(id_token):
             # Retrieve the user's details and add them to Firestore if they are a new user
             user_info = auth_service.get_user(uid)
             add_user_to_firestore(user_info)
+            add_default_mood(user_info.uid)
             return {"status": "new_user", "user": user_info.email}
         else:
             # If the user already exists, return the existing user's info
@@ -35,3 +37,12 @@ def add_user_to_firestore(user_info):
         'last_login_at': user_info.user_metadata.last_sign_in_timestamp
     }
     db.collection('users').document(user_info.uid).set(user_data)
+
+
+def add_default_mood(user_id):
+    moodData = {
+            "user_id": user_id,
+            "mood": 50,
+            "created_at": round(time.time() * 1000),
+        }
+    doc_ref = db.collection("mood").add(moodData)

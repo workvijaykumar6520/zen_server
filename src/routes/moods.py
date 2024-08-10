@@ -9,8 +9,8 @@ import requests
 import concurrent.futures
 import logging
 from expiringdict import ExpiringDict
-
-
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 def addMoodRecords(data):
     try:
@@ -69,56 +69,6 @@ def getMoodsPercentage(user_id):
         return {"success": False, "data": {}, "message": "Failed to get the moods"}
 
 
-# def getYoutubeLinks(query):
-#     url = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=" + query +"&type=video&key=AIzaSyCNoUN4nPASA9Wfzv9hFv1cpUq3_KtDS2c"
-
-#     payload = {}
-#     headers = {}
-
-#     response = requests.request("GET", url, headers=headers, data=payload)
-
-#     return response.text
-
-# def getMoodLinks(mood):
-#     try:
-#         GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-#         genai.configure(api_key=GEMINI_API_KEY)
-#         model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
-
-#         prompt = """You are Zen, an experienced Mental Health Assistant with extensive expertise in cognitive sciences and mental wellness. Your primary responsibility is to provide empathetic, non-judgmental support to users seeking guidance on mental health issues.
-#                     It has a video reccomendation feature based upon mood.you have to give search terms to search in youtube based upon mood
-#                     \n\nMy current mood:""" + mood + """\n\n Provide the array of objects. I want two sections each section contains sectionTitle and searchTerms
-
-#                     Example output: [\{sectionTitle: "",searchTerms:["search term1",...],....\}]
-                    
-#                     """
-#         result = model.generate_content(prompt)
-#         text = json.loads(result.text) if result.text else {}
-#         finalResult = []
-#         for section in text:
-#             result = []
-#             with concurrent.futures.ThreadPoolExecutor() as executor:
-#                 futureQuery = {
-#                     executor.submit(getYoutubeLinks, query): query for query in section.get("searchTerms", [])
-#                 }
-                
-#                 for future in concurrent.futures.as_completed(futureQuery):
-#                     try:
-#                         result.append(json.loads(future.result()))
-#                     except Exception as e:
-#                         logging.error(f"Exception occurred while processing results for youtube query: {e}")
-#             finalResult.append({"sectionTitle": section.get("sectionTitle"), "searchResults": result})
-
-#         return {"success": True, "data": finalResult, "message": "Successfully retrieved mood links"}, 200
-#     except Exception as e:
-#         print("exception occurred while updating:", e)
-#         return {"success": False, "data": {}, "message": "Failed to get the mood links"}, 500
-
-
-
-
-
-
 # Initialize the mood cache with a maximum of 100 items and a 24-hour expiration time
 mood_cache = ExpiringDict(max_len=100, max_age_seconds=86400)
 
@@ -128,7 +78,7 @@ def get_youtube_links(query):
     """
     url = (
         f"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q={query}"
-        f"&type=video&key=AIzaSyCNoUN4nPASA9Wfzv9hFv1cpUq3_KtDS2c"
+        f"&type=video&key={YOUTUBE_API_KEY}"
     )
     try:
         response = requests.get(url)
@@ -142,7 +92,6 @@ def generate_search_terms(mood):
     """
     Generate search terms based on the mood using the Generative AI model.
     """
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
 
