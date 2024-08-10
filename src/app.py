@@ -3,7 +3,7 @@ from flask_cors import cross_origin
 import logging
 from dotenv import load_dotenv
 from db_config import auth_service
-
+import os
 load_dotenv(".env")
 from flask import request
 from routes.health import health
@@ -19,12 +19,14 @@ from routes.goals import (
     editGoalsTargets,
     updateTaskStatus,
 )
-from routes.moods import addMoodRecords, getMoodsPercentage
+from routes.moods import addMoodRecords, getMoodsPercentage,get_mood_links
 from routes.login import login_with_google
 from routes.dashboard import get_user_goals_progress, get_motivational_quote
 from auth_config import decodeAuth
 from routes.dashboard import get_motivational_quote, get_user_goals_progress
 from routes.chat import chat_gemini, getChatData
+import os
+import google.generativeai as genai
 
 # Note :- THIS FILE SHOULD ONLY CONTAIN ROUTING AND LOGGING
 
@@ -340,4 +342,37 @@ def chat():
         return {"success": True, "data": resp, "message": "Successful"}, 200
     except Exception as e:
         logging.error(f"error occurred in chat {e}", exc_info=True, stack_info=True)
+        return {"success": False, "message": "Internal server error"}, 500
+
+
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# @app.route("/api/videos", methods=["GET"])
+# @cross_origin()
+# def getVideoRecceomendation():
+#     genai.configure(api_key=GEMINI_API_KEY)
+#     model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
+
+
+#     # Convert questionnaire response to JSON string
+#     # questionnaireResponseString = json.dumps(questionnaireResp)
+#     # promptString = GET_GOAL_RECOMMENDATION + questionnaireResponseString
+
+#     # Invoke the Gemini LLM to get goal recommendations
+#     # result = gemini_llm.invoke(promptString)
+
+#     result = model.generate_content("Provide me with a list of YouTube video links featuring recent, highly viewed, and positively rated content that is specifically designed to uplift mood and combat sadness. Please include the video title, channel name, and a brief description. Focus on content that is popular, engaging, and has a proven track record of making people happy.")
+#     print(result)
+#     return {"success": True, "data": "", "message": "Successful"}, 200
+
+
+@app.route("/api/mood", methods=["GET"])
+@cross_origin()
+def get_mood_videos():
+    try:
+        # data = request.get_json()
+        mood = request.args.get('mood')
+        logging.info("/api/mood POST called")
+        return get_mood_links(mood)
+    except Exception as e:
+        logging.error(e, exc_info=True)
         return {"success": False, "message": "Internal server error"}, 500
